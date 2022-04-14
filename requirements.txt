@@ -1,0 +1,5 @@
+python-frontmatter
+markata
+markupsafe==2.0.1
+rich
+textual
