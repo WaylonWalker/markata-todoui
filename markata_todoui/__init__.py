@@ -76,8 +76,6 @@ class Posts(Widget):
     def __init__(self, markata: "Markata", title: str, filter: str):
         super().__init__(title)
         self.m = markata
-        self.config = self.m.get_plugin_config(__file__)
-        self.config["keys"] = {**self.config.get("keys", {}), **DEFAULT_KEYS}
 
         self.title = title
         self.name = title
@@ -213,7 +211,9 @@ class MarkataApp(App):
     async def on_load(self, event):
         self.m = Markata()
         self.config = self.m.get_plugin_config("todoui")
-        for key, command in self.config.get("keys", None).items():
+        self.config["keys"] = {**self.config.get("keys", {}), **DEFAULT_KEYS}
+
+        for key, command in self.config.get("keys", {}).items():
             await self.bind(key, command)
 
     async def action_show_config(self) -> None:
