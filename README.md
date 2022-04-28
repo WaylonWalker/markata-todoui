@@ -12,7 +12,7 @@ pip install git+https://github.com/waylonwalker/markata-todoui
 Create a `markata.toml` config file or copy the one in this repo
 
 ```bash
-wget https://raw.githubusercontent.com/WaylonWalker/markata-todoui/main/markata.example.toml -o markata.toml
+wget https://raw.githubusercontent.com/WaylonWalker/markata-todoui/main/markata.example.toml -O markata.toml
 ```
 
 ## Define Tasks
