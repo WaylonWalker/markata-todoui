@@ -64,6 +64,3 @@ card_template="<li class='post'><a href='/{{ slug }}/'>{{ slug }}</a></li>"
 title="doing list"
 filter="status=='done'"
 card_template="<li class='post'><a href='/{{ slug }}/'>{{ slug }}</a></li>"
- 
-[markata.multifeed.board]
-feeds=['todo', 'doing', 'done']
