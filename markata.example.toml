@@ -17,11 +17,10 @@ default_cache_expire = 1209600
 ## Markata Setup
 glob_patterns = "tasks/**/*.md"
 hooks = [
-   # "plugins.multifeed",
-   "default",
+    "markata_todoui",
+    "default",
    ]
 disabled_hooks = [
-"markata_todoui",
 ]
  
 ## Site Config
