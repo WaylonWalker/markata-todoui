@@ -18,6 +18,24 @@ from textual.widgets import Footer, Placeholder
 __version__ = "0.0.1"
 
 
+DEFAULT_KEYS = {
+    "q": "quit",
+    "l": "next_stack",
+    "L": "move_next",
+    "H": "move_previous",
+    "J": "lower_priority",
+    "K": "raise_priority",
+    "h": "prev_stack",
+    "r": "refresh",
+    "j": "next_post",
+    "k": "prev_post",
+    "enter": "open_post",
+    "n": "new_post",
+    "ctrl+@": "show_config",
+    "c": "show_config",
+}
+
+
 class Status(Enum):
     todo = auto()
     doing = auto()
@@ -58,6 +76,9 @@ class Posts(Widget):
     def __init__(self, markata: "Markata", title: str, filter: str):
         super().__init__(title)
         self.m = markata
+        self.config = self.m.get_plugin_config(__file__)
+        self.config["keys"] = {**self.config.get("keys", {}), **DEFAULT_KEYS}
+
         self.title = title
         self.name = title
         self.filter = filter
@@ -176,7 +197,6 @@ class MarkataWidget(Widget):
 
 class MarkataApp(App):
     async def on_mount(self) -> None:
-        self.m = Markata()
         self.m.console.quiet = True
         self.preview = Preview(text="init")
         self.todos = Posts(self.m, "todo", 'status=="todo"')
@@ -191,18 +211,14 @@ class MarkataApp(App):
         self.set_interval(1, self.action_refresh)
 
     async def on_load(self, event):
-        await self.bind("q", "quit", "quit")
-        await self.bind("l", "next_stack", "next_stack")
-        await self.bind("L", "move_next", "move_next")
-        await self.bind("H", "move_previous", "move_previous")
-        await self.bind("J", "lower_priority", "lower_priority")
-        await self.bind("K", "raise_priority", "raise_priority")
-        await self.bind("h", "prev_stack", "prev_stack")
-        await self.bind("r", "refresh", "refresh")
-        await self.bind("j", "next_post", "next_post")
-        await self.bind("k", "prev_post", "prev_post")
-        await self.bind("enter", "open_post", "open_post")
-        await self.bind("n", "new_post", "new_post")
+        self.m = Markata()
+        self.config = self.m.get_plugin_config("todoui")
+        for key, command in self.config.get("keys", None).items():
+            await self.bind(key, command)
+
+    async def action_show_config(self) -> None:
+        self.preview.text = "config\n" + str(self.config)
+        self.preview.refresh()
 
     async def action_refresh(self) -> None:
         # self.refresh()
