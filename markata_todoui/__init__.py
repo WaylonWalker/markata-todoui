@@ -1,5 +1,7 @@
 import itertools
 import subprocess
+import uuid
+from copy import deepcopy
 from enum import Enum, auto
 from pathlib import Path
 from typing import Optional
@@ -88,7 +90,7 @@ class Posts(Widget):
     def text(self) -> Optional[str]:
         for i, post in enumerate(self.m.filter(self.filter)):
             if i == self.row_selected and self.is_selected:
-                return post.content
+                return post["uuid"] + post.content
         return None
 
     def render(self) -> Panel:
@@ -322,6 +324,19 @@ class MarkataApp(App):
             shell=True,
         )
         proc.wait()
+
+
+@hook_impl()
+def load(markata):
+    for article in markata.articles:
+        if "uuid" not in article.keys():
+            article["uuid"] = str(uuid.uuid4())
+            og_keys = frontmatter.loads(Path(article["path"]).read_text()).keys()
+            print(og_keys)
+            save_article = deepcopy(article)
+            for key in set(article.keys()) - set(og_keys):
+                del save_article[key]
+            Path(article["path"]).write_text(frontmatter.dumps(save_article))
 
 
 @hook_impl()
