@@ -40,29 +40,6 @@ DEFAULT_KEYS = {
 }
 
 
-class Status(Enum):
-    todo = auto()
-    doing = auto()
-    done = auto()
-
-    def next(self):
-        if self.value == len(self._member_names_):
-            return Status(1)
-        else:
-            return Status(self.value + 1)
-
-    def previous(self):
-        if self.value == 1:
-            return Status(len(self._member_names_))
-        else:
-            return Status(self.value - 1)
-
-
-def nth(iterable, n, default=None):
-    "Returns the nth item or a default value"
-    return next(islice(iterable, n, None), default)
-
-
 class Preview(Widget):
     def __init__(self, text):
         super().__init__("preview")
@@ -70,17 +47,6 @@ class Preview(Widget):
 
     def render(self):
         return Panel(Markdown(self.text))
-
-
-class MarkataWidget(Widget):
-    def __init__(self, markata: Markata, widget: str = "server"):
-        super().__init__(widget)
-        self.m = markata
-        self.widget = widget
-        self.renderable = getattr(self.m, self.widget)
-
-    def render(self):
-        return self.renderable
 
 
 class MarkataApp(App):
