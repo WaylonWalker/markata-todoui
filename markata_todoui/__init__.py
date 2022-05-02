@@ -148,6 +148,7 @@ class Posts(Widget):
         post.metadata = keys_on_file(post)
         post["status"] = Status(Status._member_map_[post["status"]]).next().name
         path.write_text(frontmatter.dumps(post))
+        self.update()
 
     def raise_priority(self) -> None:
         post = self.current_post
@@ -155,6 +156,7 @@ class Posts(Widget):
         post.metadata = keys_on_file(post)
         post["priority"] = post["priority"] + 1
         path.write_text(frontmatter.dumps(post))
+        self.update()
 
     def lower_priority(self) -> None:
         post = self.current_post
@@ -162,6 +164,7 @@ class Posts(Widget):
         post.metadata = keys_on_file(post)
         post["priority"] = post["priority"] - 1
         path.write_text(frontmatter.dumps(post))
+        self.update()
 
     def open_post(self) -> None:
 
@@ -179,6 +182,7 @@ class Posts(Widget):
         post.metadata = keys_on_file(post)
         post["status"] = Status(Status._member_map_[post["status"]]).previous().name
         path.write_text(frontmatter.dumps(post))
+        self.update()
 
     def update_markata(self, markata) -> None:
         self.m = markata
@@ -251,27 +255,27 @@ class MarkataApp(App):
         self.current_stack.move_next()
         self.m.glob()
         self.m.load()
-        self.current_stack.is_selected = False
-        self.current_stack = next(self.stacks)
-        self.current_stack.is_selected = True
-        self.preview.text = self.current_stack.text() or ""
-        # self.action_refresh()
+        await self.action_next_stack()
+        # self.current_stack.is_selected = False
+        # self.current_stack = next(self.stacks)
+        # self.current_stack.is_selected = True
+        # self.preview.text = self.current_stack.text() or ""
 
     async def action_move_previous(self) -> None:
         self.current_stack.move_previous()
         self.m.glob()
         self.m.load()
-        self.current_stack.is_selected = False
-        self.current_stack = next(self.stacks)
-        self.current_stack = next(self.stacks)
-        self.current_stack.is_selected = True
-        self.preview.text = self.current_stack.text() or ""
-        # self.action_refresh()
+        await self.action_prev_stack()
+        # self.current_stack.is_selected = False
+        # self.current_stack = next(self.stacks)
+        # self.current_stack = next(self.stacks)
+        # self.current_stack.is_selected = True
+        # self.preview.text = self.current_stack.text() or ""
 
-        self.todos.refresh()
-        self.doing.refresh()
-        self.done.refresh()
-        self.preview.refresh()
+        # self.todos.refresh()
+        # self.doing.refresh()
+        # self.done.refresh()
+        # self.preview.refresh()
 
     async def action_raise_priority(self) -> None:
         self.current_stack.raise_priority()
