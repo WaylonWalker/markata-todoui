@@ -101,10 +101,6 @@ class Posts(Widget):
 
     def text(self) -> Optional[str]:
         return self.current_post.content
-        # for post in self.m.filter(self.filter):
-        #     if post == self.current_post and self.is_selected:
-        #         return post["uuid"] + post.content
-        # return None
 
     def render(self) -> Panel:
         grid = Table.grid(expand=True)
@@ -184,15 +180,6 @@ class Posts(Widget):
         path.write_text(frontmatter.dumps(post))
         self.update()
 
-    def update_markata(self, markata) -> None:
-        self.m = markata
-
-    # def render(self):
-    #     return self.__rich__()
-
-    # async def update(self, renderable: RenderableType) -> None:
-    #     self.refresh()
-
 
 class MarkataWidget(Widget):
     def __init__(self, markata: Markata, widget: str = "server"):
@@ -203,10 +190,6 @@ class MarkataWidget(Widget):
 
     def render(self):
         return self.renderable
-
-    # async def update(self, renderable: RenderableType) -> None:
-    #     self.renderable = renderable
-    #     self.refresh()
 
 
 class MarkataApp(App):
@@ -235,8 +218,6 @@ class MarkataApp(App):
         self.preview.refresh()
 
     async def action_refresh(self) -> None:
-        # self.refresh()
-        # self.m = Markata()
         self.m.glob()
         self.m.load()
         self.todos.refresh()
@@ -256,26 +237,12 @@ class MarkataApp(App):
         self.m.glob()
         self.m.load()
         await self.action_next_stack()
-        # self.current_stack.is_selected = False
-        # self.current_stack = next(self.stacks)
-        # self.current_stack.is_selected = True
-        # self.preview.text = self.current_stack.text() or ""
 
     async def action_move_previous(self) -> None:
         self.current_stack.move_previous()
         self.m.glob()
         self.m.load()
         await self.action_prev_stack()
-        # self.current_stack.is_selected = False
-        # self.current_stack = next(self.stacks)
-        # self.current_stack = next(self.stacks)
-        # self.current_stack.is_selected = True
-        # self.preview.text = self.current_stack.text() or ""
-
-        # self.todos.refresh()
-        # self.doing.refresh()
-        # self.done.refresh()
-        # self.preview.refresh()
 
     async def action_raise_priority(self) -> None:
         self.current_stack.raise_priority()
@@ -284,7 +251,6 @@ class MarkataApp(App):
         self.current_stack.refresh()
         self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
-        # self.action_refresh()
 
     async def action_lower_priority(self) -> None:
         self.current_stack.lower_priority()
@@ -295,7 +261,6 @@ class MarkataApp(App):
         self.current_stack.refresh()
         self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
-        # self.action_refresh()
 
     async def action_prev_post(self) -> None:
         self.current_stack.prev_post()
