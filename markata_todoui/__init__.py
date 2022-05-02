@@ -82,22 +82,23 @@ class Posts(Widget):
     def __init__(self, markata: "Markata", title: str, filter: str):
         super().__init__(title)
         self.m = markata
-        self.config = self.m.get_plugin_config(__file__)
-        self.config["keys"] = {**self.config.get("keys", {}), **DEFAULT_KEYS}
+        self.config = self.m.get_plugin_config(__file__) or {}
 
         self.title = title
         self.name = title
         self.filter = filter
         self.is_selected = False
+        self.current_post = DummyPost("")
         self.update()
+        self.next_post()
 
-    def update(self):
+    def update(self) -> None:
+
         self.post_list = sorted(
             self.m.filter(self.filter), key=lambda x: x["priority"], reverse=True
         )
         self.post_cycle = itertools.cycle(self.post_list)
-        self.current_post = DummyPost("")
-        self.next_post()
+        self.refresh()
 
     def text(self) -> Optional[str]:
         return self.current_post.content
@@ -128,18 +129,25 @@ class Posts(Widget):
             border_style=self.border_style,
         )
 
-    def prev_post(self) -> frontmatter.Post:
+    def prev_post(self) -> None:
         if len(self.post_list):
             for _ in range(len(self.post_list) - 1):
                 self.current_post = next(self.post_cycle)
 
-    def next_post(self) -> frontmatter.Post:
+    def next_post(self) -> None:
         if len(self.post_list):
             self.current_post = next(self.post_cycle)
 
+    def select_post_by_id(self, uuid: str) -> frontmatter.Post:
+        first_uuid = self.current_post["uuid"]
+        while uuid != self.current_post["uuid"]:
+            self.current_post = next(self.post_cycle)
+            if self.current_post["uuid"] == first_uuid:
+                raise RecursionError(f"could not find post uuid: {uuid}")
+
     def move_next(self) -> None:
 
-        post = self.current_post
+        post = deepcopy(self.current_post)
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
         post["status"] = Status(Status._member_map_[post["status"]]).next().name
@@ -147,7 +155,7 @@ class Posts(Widget):
         self.update()
 
     def raise_priority(self) -> None:
-        post = self.current_post
+        post = deepcopy(self.current_post)
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
         post["priority"] = post["priority"] + 1
@@ -155,7 +163,7 @@ class Posts(Widget):
         self.update()
 
     def lower_priority(self) -> None:
-        post = self.current_post
+        post = deepcopy(self.current_post)
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
         post["priority"] = post["priority"] - 1
@@ -173,7 +181,7 @@ class Posts(Widget):
 
     def move_previous(self) -> None:
 
-        post = self.current_post
+        post = deepcopy(self.current_post)
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
         post["status"] = Status(Status._member_map_[post["status"]]).previous().name
@@ -210,6 +218,10 @@ class MarkataApp(App):
     async def on_load(self, event):
         self.m = Markata()
         self.config = self.m.get_plugin_config("todoui")
+
+        user_defined_keys = self.config.get("keys", {})
+        self.config["keys"] = {**user_defined_keys, **DEFAULT_KEYS}
+
         for key, command in self.config.get("keys", None).items():
             await self.bind(key, command)
 
@@ -233,15 +245,19 @@ class MarkataApp(App):
         self.preview.refresh()
 
     async def action_move_next(self) -> None:
+        current_post_uuid = self.current_stack.current_post["uuid"]
         self.current_stack.move_next()
         self.m.glob()
         self.m.load()
+        self.current_stack.select_post_by_id(current_post_uuid)
         await self.action_next_stack()
 
     async def action_move_previous(self) -> None:
+        current_post_uuid = self.current_stack.current_post["uuid"]
         self.current_stack.move_previous()
         self.m.glob()
         self.m.load()
+        self.current_stack.select_post_by_id(current_post_uuid)
         await self.action_prev_stack()
 
     async def action_raise_priority(self) -> None:
@@ -249,18 +265,22 @@ class MarkataApp(App):
         self.m.glob()
         self.m.load()
         self.current_stack.refresh()
-        self.preview.text = self.current_stack.text() or ""
-        self.preview.refresh()
+        self.current_stack.update()
+        # self.current_stack.refresh()
+        # self.preview.text = self.current_stack.text() or ""
+        # self.preview.refresh()
 
     async def action_lower_priority(self) -> None:
         self.current_stack.lower_priority()
         self.m.glob()
         self.m.load()
-
-        self.current_stack.next_post()
         self.current_stack.refresh()
-        self.preview.text = self.current_stack.text() or ""
-        self.preview.refresh()
+        self.current_stack.update()
+
+        # self.current_stack.next_post()
+        # self.current_stack.refresh()
+        # self.preview.text = self.current_stack.text() or ""
+        # self.preview.refresh()
 
     async def action_prev_post(self) -> None:
         self.current_stack.prev_post()
