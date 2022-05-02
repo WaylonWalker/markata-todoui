@@ -4,7 +4,7 @@ import uuid
 from copy import deepcopy
 from enum import Enum, auto
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 import frontmatter
 from markata import Markata
@@ -38,6 +38,10 @@ DEFAULT_KEYS = {
 }
 
 
+class DummyPost(frontmatter.Post):
+    uuid = ""
+
+
 class Status(Enum):
     todo = auto()
     doing = auto()
@@ -61,7 +65,7 @@ def nth(iterable, n, default=None):
     return next(islice(iterable, n, None), default)
 
 
-def keys_on_file(post):
+def keys_on_file(post: frontmatter.Post) -> Dict[str, str]:
     return {key: post[key] for key in frontmatter.load(post.get("path")).keys()}
 
 
@@ -85,23 +89,28 @@ class Posts(Widget):
         self.name = title
         self.filter = filter
         self.is_selected = False
-        self.row_selected = 0
+        self.update()
+
+    def update(self):
+        self.post_list = sorted(
+            self.m.filter(self.filter), key=lambda x: x["priority"], reverse=True
+        )
+        self.post_cycle = itertools.cycle(self.post_list)
+        self.current_post = DummyPost("")
+        self.next_post()
 
     def text(self) -> Optional[str]:
-        for i, post in enumerate(self.m.filter(self.filter)):
-            if i == self.row_selected and self.is_selected:
-                return post["uuid"] + post.content
-        return None
+        return self.current_post.content
+        # for post in self.m.filter(self.filter):
+        #     if post == self.current_post and self.is_selected:
+        #         return post["uuid"] + post.content
+        # return None
 
     def render(self) -> Panel:
         grid = Table.grid(expand=True)
 
-        for i, post in enumerate(
-            sorted(
-                self.m.filter(self.filter), key=lambda x: x["priority"], reverse=True
-            )
-        ):
-            if i == self.row_selected and self.is_selected:
+        for post in self.post_list:
+            if post["uuid"] == self.current_post["uuid"] and self.is_selected:
                 grid.add_row(
                     f"[red]{post.get('title')}",
                     f"[bright_black]({post.get('priority')})[/]",
@@ -123,56 +132,55 @@ class Posts(Widget):
             border_style=self.border_style,
         )
 
-    def get_current_post(self):
-        for i, post in enumerate(
-            sorted(
-                self.m.filter(self.filter), key=lambda x: x["priority"], reverse=True
-            )
-        ):
-            if i == self.row_selected and self.is_selected:
-                return post
-        return None
+    def prev_post(self) -> frontmatter.Post:
+        if len(self.post_list):
+            for _ in range(len(self.post_list) - 1):
+                self.current_post = next(self.post_cycle)
 
-    def move_next(self):
+    def next_post(self) -> frontmatter.Post:
+        if len(self.post_list):
+            self.current_post = next(self.post_cycle)
 
-        post = self.get_current_post()
+    def move_next(self) -> None:
+
+        post = self.current_post
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
         post["status"] = Status(Status._member_map_[post["status"]]).next().name
         path.write_text(frontmatter.dumps(post))
 
-    def raise_priority(self):
-        post = self.get_current_post()
+    def raise_priority(self) -> None:
+        post = self.current_post
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
         post["priority"] = post["priority"] + 1
         path.write_text(frontmatter.dumps(post))
 
-    def lower_priority(self):
-        post = self.get_current_post()
+    def lower_priority(self) -> None:
+        post = self.current_post
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
         post["priority"] = post["priority"] - 1
         path.write_text(frontmatter.dumps(post))
 
-    def open_post(self):
+    def open_post(self) -> None:
 
-        post = self.get_current_post()
+        post = self.current_post
         proc = subprocess.Popen(
             f'nvr --remote "{post["path"]}"',
             shell=True,
         )
         proc.wait()
 
-    def move_previous(self):
+    def move_previous(self) -> None:
 
-        post = self.get_current_post()
+        post = self.current_post
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
         post["status"] = Status(Status._member_map_[post["status"]]).previous().name
         path.write_text(frontmatter.dumps(post))
 
-    def update_markata(self, markata):
+    def update_markata(self, markata) -> None:
         self.m = markata
 
     # def render(self):
@@ -205,7 +213,7 @@ class MarkataApp(App):
         self.doing = Posts(self.m, "doing", 'status=="doing"')
         self.done = Posts(self.m, "done", 'status=="done"')
         self.stacks = itertools.cycle([self.todos, self.doing, self.done])
-        self.current = self.todos
+        self.current_stack = self.todos
         self.todos.is_selected = True
         await self.view.dock(
             self.preview, self.todos, self.doing, self.done, edge="left", name="todos"
@@ -230,34 +238,34 @@ class MarkataApp(App):
         self.todos.refresh()
         self.doing.refresh()
         self.done.refresh()
-        self.preview.text = self.current.text() or ""
+        self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
 
     async def action_next_post(self) -> None:
-        self.current.row_selected += 1
-        self.current.refresh()
-        self.preview.text = self.current.text() or ""
+        self.current_stack.next_post()
+        self.current_stack.refresh()
+        self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
 
     async def action_move_next(self) -> None:
-        self.current.move_next()
+        self.current_stack.move_next()
         self.m.glob()
         self.m.load()
-        self.current.is_selected = False
-        self.current = next(self.stacks)
-        self.current.is_selected = True
-        self.preview.text = self.current.text() or ""
+        self.current_stack.is_selected = False
+        self.current_stack = next(self.stacks)
+        self.current_stack.is_selected = True
+        self.preview.text = self.current_stack.text() or ""
         # self.action_refresh()
 
     async def action_move_previous(self) -> None:
-        self.current.move_previous()
+        self.current_stack.move_previous()
         self.m.glob()
         self.m.load()
-        self.current.is_selected = False
-        self.current = next(self.stacks)
-        self.current = next(self.stacks)
-        self.current.is_selected = True
-        self.preview.text = self.current.text() or ""
+        self.current_stack.is_selected = False
+        self.current_stack = next(self.stacks)
+        self.current_stack = next(self.stacks)
+        self.current_stack.is_selected = True
+        self.preview.text = self.current_stack.text() or ""
         # self.action_refresh()
 
         self.todos.refresh()
@@ -266,54 +274,56 @@ class MarkataApp(App):
         self.preview.refresh()
 
     async def action_raise_priority(self) -> None:
-        self.current.raise_priority()
+        self.current_stack.raise_priority()
         self.m.glob()
         self.m.load()
-
-        self.current.row_selected -= 1
-        self.current.refresh()
-        self.preview.text = self.current.text() or ""
+        self.current_stack.refresh()
+        self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
         # self.action_refresh()
 
     async def action_lower_priority(self) -> None:
-        self.current.lower_priority()
+        self.current_stack.lower_priority()
         self.m.glob()
         self.m.load()
 
-        self.current.row_selected += 1
-        self.current.refresh()
-        self.preview.text = self.current.text() or ""
+        self.current_stack.next_post()
+        self.current_stack.refresh()
+        self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
         # self.action_refresh()
 
     async def action_prev_post(self) -> None:
-        self.current.row_selected -= 1
-        self.current.refresh()
-        self.preview.text = self.current.text() or ""
+        self.current_stack.prev_post()
+        self.current_stack.refresh()
+        self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
 
     async def action_next_stack(self) -> None:
-        self.current.is_selected = False
-        self.current.refresh()
-        self.current = next(self.stacks)
-        self.current.is_selected = True
-        self.current.refresh()
-        self.preview.text = self.current.text() or ""
+        self.current_stack.is_selected = False
+        self.current_stack.refresh()
+        self.current_stack.update()
+        self.current_stack = next(self.stacks)
+        self.current_stack.is_selected = True
+        self.current_stack.refresh()
+        self.current_stack.update()
+        self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
 
     async def action_prev_stack(self) -> None:
-        self.current.is_selected = False
-        self.current.refresh()
-        self.current = next(self.stacks)
-        self.current = next(self.stacks)
-        self.current.is_selected = True
-        self.current.refresh()
-        self.preview.text = self.current.text() or ""
+        self.current_stack.is_selected = False
+        self.current_stack.refresh()
+        self.current_stack.update()
+        self.current_stack = next(self.stacks)
+        self.current_stack = next(self.stacks)
+        self.current_stack.is_selected = True
+        self.current_stack.refresh()
+        self.current_stack.update()
+        self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
 
     async def action_open_post(self) -> None:
-        self.current.open_post()
+        self.current_stack.open_post()
 
     async def action_new_post(self) -> None:
         pop_dir = Path(__file__).parents[1]
@@ -329,13 +339,15 @@ class MarkataApp(App):
 @hook_impl()
 def load(markata):
     for article in markata.articles:
+
         if "uuid" not in article.keys():
             article["uuid"] = str(uuid.uuid4())
             og_keys = frontmatter.loads(Path(article["path"]).read_text()).keys()
-            print(og_keys)
             save_article = deepcopy(article)
             for key in set(article.keys()) - set(og_keys):
-                del save_article[key]
+                if key != "uuid":
+                    print("deleting" + key)
+                    del save_article[key]
             Path(article["path"]).write_text(frontmatter.dumps(save_article))
 
 
