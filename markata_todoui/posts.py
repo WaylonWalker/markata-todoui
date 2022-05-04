@@ -48,13 +48,15 @@ class Posts(Widget):
         self.filter = filter
         self.is_selected = True
         self.current_post = DummyPost("")
+        self.messages = ""
         self.update()
         self.next_post()
 
-    def update(self) -> None:
+    def update(self, reload=False) -> None:
         current_uuid = self.current_post.get("uuid", None)
-        # self.m.glob()
-        # self.m.load()
+        # if reload:
+        #     self.m.glob()
+        #     self.m.load()
 
         self.post_list = sorted(
             self.m.filter(self.filter), key=lambda x: x["priority"], reverse=True
@@ -62,10 +64,12 @@ class Posts(Widget):
         self.post_cycle = itertools.cycle(self.post_list)
         if current_uuid is not None:
             self.select_post_by_id(current_uuid)
+        self.messages = self.messages + f"{self.current_post.get('uuid')}\n"
         self.refresh()
 
     def text(self) -> Optional[str]:
-        return self.current_post.get("uuid", "") + self.current_post.content
+        return self.messages
+        # return self.current_post.get("uuid", "") + self.current_post.content
 
     def render(self) -> Panel:
         grid = Table.grid(expand=True)
@@ -96,26 +100,35 @@ class Posts(Widget):
             border_style=self.border_style,
         )
 
-    def prev_post(self) -> None:
+    def previous_post(self) -> None:
         if len(self.post_list):
             for _ in range(len(self.post_list) - 1):
                 self.current_post = next(self.post_cycle)
+        self.refresh()
 
     def __next__(self) -> frontmatter.Post:
         return self.next_post()
 
     def next_post(self) -> frontmatter.Post:
-        if len(self.post_list):
+        try:
             self.current_post = next(self.post_cycle)
-        else:
-            self.current_post.content = "No More Posts"
-        return self.current_post
+        except StopIteration:
+            ...
+        self.refresh()
+        # else:
+        #     self.current_post.content = "No More Posts"
+        # return self.current_post
 
     def select_post_by_id(self, uuid: str) -> frontmatter.Post:
-        first_uuid = self.current_post.get("uuid", "")
-        while uuid != self.current_post.get("uuid", ""):
+        first_uuid = self.current_post["uuid"]
+        self.messages = "getting post by id\n"
+        self.messages = self.messages + f"first_uuid: {first_uuid}\n"
+        self.messages = self.messages + f"looking for uuid: {uuid}\n"
+        while uuid != self.current_post["uuid"]:
+
             self.current_post = next(self.post_cycle)
-            if self.current_post.get("uuid", "") == first_uuid:
+            self.messages = self.messages + f'this uuid: {self.current_post["uuid"]}\n'
+            if self.current_post["uuid"] == first_uuid:
                 raise RecursionError(f"could not find post uuid: {uuid}")
 
     def move_next(self) -> None:

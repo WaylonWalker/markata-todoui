@@ -92,10 +92,10 @@ class MarkataApp(App):
     async def action_next_post(self) -> None:
         self.current_stack.next_post()
         # await self.action_refresh(reload=False)
-        self.current_stack.update()
-        self.current_stack.refresh()
-        self.preview.text = self.current_stack.text() or ""
-        self.preview.refresh()
+        # self.current_stack.update()
+        # self.current_stack.refresh()
+        # self.preview.text = self.current_stack.text() or ""
+        # self.preview.refresh()
 
     async def action_move_next(self) -> None:
         current_post_uuid = self.current_stack.current_post.get("uuid", "")
@@ -134,8 +134,7 @@ class MarkataApp(App):
         # self.preview.refresh()
 
     async def action_prev_post(self) -> None:
-        self.current_stack.prev_post()
-        await self.action_refresh(reload=False)
+        self.current_stack.previous_post()
         # self.current_stack.update()
         # self.preview.text = self.current_stack.text() or ""
         # self.preview.refresh()
