@@ -27,21 +27,24 @@ class Posts(Widget):
         self.title = title
         self.name = title
         self.filter = filter
-        self.is_selected = False
+        self.is_selected = True
         self.current_post = DummyPost("")
         self.update()
         self.next_post()
 
     def update(self) -> None:
+        current_uuid = self.current_post.get("uuid", None)
 
         self.post_list = sorted(
             self.m.filter(self.filter), key=lambda x: x["priority"], reverse=True
         )
         self.post_cycle = itertools.cycle(self.post_list)
+        if current_uuid is not None:
+            self.select_post_by_id(current_uuid)
         self.refresh()
 
     def text(self) -> Optional[str]:
-        return self.current_post.content
+        return self.current_post["uuid"] + self.current_post.content
 
     def render(self) -> Panel:
         grid = Table.grid(expand=True)
@@ -74,9 +77,15 @@ class Posts(Widget):
             for _ in range(len(self.post_list) - 1):
                 self.current_post = next(self.post_cycle)
 
-    def next_post(self) -> None:
+    def __next__(self) -> frontmatter.Post:
+        return self.next_post()
+
+    def next_post(self) -> frontmatter.Post:
         if len(self.post_list):
             self.current_post = next(self.post_cycle)
+        else:
+            self.current_post.content = "No More Posts"
+        return self.current_post
 
     def select_post_by_id(self, uuid: str) -> frontmatter.Post:
         first_uuid = self.current_post["uuid"]

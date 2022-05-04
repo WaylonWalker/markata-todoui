@@ -39,6 +39,8 @@ DEFAULT_KEYS = {
     "c": "show_config",
 }
 
+GLOBAL_FILTER = "True"
+
 
 class Preview(Widget):
     def __init__(self, text):
@@ -53,16 +55,18 @@ class MarkataApp(App):
     async def on_mount(self) -> None:
         self.m.console.quiet = True
         self.preview = Preview(text="init")
-        self.todos = Posts(self.m, "todo", 'status=="todo"')
-        self.doing = Posts(self.m, "doing", 'status=="doing"')
-        self.done = Posts(self.m, "done", 'status=="done"')
+        self.todos = Posts(self.m, "todo", f'{GLOBAL_FILTER} and status=="todo"')
+        self.doing = Posts(self.m, "doing", f'{GLOBAL_FILTER} and status=="doing"')
+        self.done = Posts(self.m, "done", f'{GLOBAL_FILTER} and status=="done"')
         self.stacks = itertools.cycle([self.todos, self.doing, self.done])
-        self.current_stack = self.todos
+        self.current_stack = next(self.stacks)
         self.todos.is_selected = True
+        self.doing.is_selected = False
+        self.done.is_selected = False
         await self.view.dock(
             self.preview, self.todos, self.doing, self.done, edge="left", name="todos"
         )
-        self.set_interval(1, self.action_refresh)
+        # self.set_interval(1, self.action_refresh)
 
     async def on_load(self, event):
         self.m = Markata()
@@ -78,17 +82,21 @@ class MarkataApp(App):
         self.preview.text = "config\n" + str(self.config)
         self.preview.refresh()
 
-    async def action_refresh(self) -> None:
-        self.m.glob()
-        self.m.load()
-        self.todos.refresh()
-        self.doing.refresh()
-        self.done.refresh()
+    async def action_refresh(self, reload=True) -> None:
+        if reload:
+            self.m.glob()
+            self.m.load()
+        self.todos.update()
+        self.doing.update()
+        self.done.update()
         self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
+        self.refresh()
 
     async def action_next_post(self) -> None:
         self.current_stack.next_post()
+        # await self.action_refresh(reload=False)
+        self.current_stack.update()
         self.current_stack.refresh()
         self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
@@ -113,7 +121,6 @@ class MarkataApp(App):
         self.current_stack.raise_priority()
         self.m.glob()
         self.m.load()
-        self.current_stack.refresh()
         self.current_stack.update()
         # self.current_stack.refresh()
         # self.preview.text = self.current_stack.text() or ""
@@ -123,7 +130,6 @@ class MarkataApp(App):
         self.current_stack.lower_priority()
         self.m.glob()
         self.m.load()
-        self.current_stack.refresh()
         self.current_stack.update()
 
         # self.current_stack.next_post()
@@ -133,32 +139,31 @@ class MarkataApp(App):
 
     async def action_prev_post(self) -> None:
         self.current_stack.prev_post()
-        self.current_stack.refresh()
-        self.preview.text = self.current_stack.text() or ""
-        self.preview.refresh()
+        await self.action_refresh(reload=False)
+        # self.current_stack.update()
+        # self.preview.text = self.current_stack.text() or ""
+        # self.preview.refresh()
 
     async def action_next_stack(self) -> None:
         self.current_stack.is_selected = False
-        self.current_stack.refresh()
-        self.current_stack.update()
+        # self.current_stack.update()
         self.current_stack = next(self.stacks)
         self.current_stack.is_selected = True
-        self.current_stack.refresh()
-        self.current_stack.update()
-        self.preview.text = self.current_stack.text() or ""
-        self.preview.refresh()
+        # self.current_stack.update()
+        # self.preview.text = self.current_stack.text() or ""
+        # self.preview.refresh()
+        await self.action_refresh(reload=False)
 
     async def action_prev_stack(self) -> None:
         self.current_stack.is_selected = False
-        self.current_stack.refresh()
-        self.current_stack.update()
+        # self.current_stack.update()
         self.current_stack = next(self.stacks)
         self.current_stack = next(self.stacks)
         self.current_stack.is_selected = True
-        self.current_stack.refresh()
-        self.current_stack.update()
-        self.preview.text = self.current_stack.text() or ""
-        self.preview.refresh()
+        # self.current_stack.update()
+        # self.preview.text = self.current_stack.text() or ""
+        # self.preview.refresh()
+        await self.action_refresh(reload=False)
 
     async def action_open_post(self) -> None:
         self.current_stack.open_post()
@@ -192,7 +197,9 @@ def load(markata):
 @hook_impl()
 def cli(app, markata):
     @app.command()
-    def todoui():
+    def todoui(global_filter="True"):
+        global GLOBAL_FILTER
+        GLOBAL_FILTER = global_filter
         MarkataApp.run(log="textual.log")
 
 
