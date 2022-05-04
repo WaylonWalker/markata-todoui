@@ -1,6 +1,7 @@
 import itertools
 import subprocess
 from copy import deepcopy
+from enum import Enum, auto
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -16,6 +17,24 @@ class DummyPost(frontmatter.Post):
 
 def keys_on_file(post: frontmatter.Post) -> Dict[str, str]:
     return {key: post[key] for key in frontmatter.load(post.get("path")).keys()}
+
+
+class Status(Enum):
+    todo = auto()
+    doing = auto()
+    done = auto()
+
+    def next(self):
+        if self.value == len(self._member_names_):
+            return Status(1)
+        else:
+            return Status(self.value + 1)
+
+    def previous(self):
+        if self.value == 1:
+            return Status(len(self._member_names_))
+        else:
+            return Status(self.value - 1)
 
 
 class Posts(Widget):
@@ -34,6 +53,8 @@ class Posts(Widget):
 
     def update(self) -> None:
         current_uuid = self.current_post.get("uuid", None)
+        # self.m.glob()
+        # self.m.load()
 
         self.post_list = sorted(
             self.m.filter(self.filter), key=lambda x: x["priority"], reverse=True
@@ -44,13 +65,16 @@ class Posts(Widget):
         self.refresh()
 
     def text(self) -> Optional[str]:
-        return self.current_post["uuid"] + self.current_post.content
+        return self.current_post.get("uuid", "") + self.current_post.content
 
     def render(self) -> Panel:
         grid = Table.grid(expand=True)
 
         for post in self.post_list:
-            if post["uuid"] == self.current_post["uuid"] and self.is_selected:
+            if (
+                post.get("uuid", "") == self.current_post.get("uuid", "")
+                and self.is_selected
+            ):
                 grid.add_row(
                     f"[red]{post.get('title')}",
                     f"[bright_black]({post.get('priority')})[/]",
@@ -88,10 +112,10 @@ class Posts(Widget):
         return self.current_post
 
     def select_post_by_id(self, uuid: str) -> frontmatter.Post:
-        first_uuid = self.current_post["uuid"]
-        while uuid != self.current_post["uuid"]:
+        first_uuid = self.current_post.get("uuid", "")
+        while uuid != self.current_post.get("uuid", ""):
             self.current_post = next(self.post_cycle)
-            if self.current_post["uuid"] == first_uuid:
+            if self.current_post.get("uuid", "") == first_uuid:
                 raise RecursionError(f"could not find post uuid: {uuid}")
 
     def move_next(self) -> None:

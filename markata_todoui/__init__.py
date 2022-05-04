@@ -2,7 +2,6 @@ import itertools
 import subprocess
 import uuid
 from copy import deepcopy
-from enum import Enum, auto
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -83,9 +82,6 @@ class MarkataApp(App):
         self.preview.refresh()
 
     async def action_refresh(self, reload=True) -> None:
-        if reload:
-            self.m.glob()
-            self.m.load()
         self.todos.update()
         self.doing.update()
         self.done.update()
@@ -102,7 +98,7 @@ class MarkataApp(App):
         self.preview.refresh()
 
     async def action_move_next(self) -> None:
-        current_post_uuid = self.current_stack.current_post["uuid"]
+        current_post_uuid = self.current_stack.current_post.get("uuid", "")
         self.current_stack.move_next()
         self.m.glob()
         self.m.load()
@@ -110,7 +106,7 @@ class MarkataApp(App):
         await self.action_next_stack()
 
     async def action_move_previous(self) -> None:
-        current_post_uuid = self.current_stack.current_post["uuid"]
+        current_post_uuid = self.current_stack.current_post.get("uuid", "")
         self.current_stack.move_previous()
         self.m.glob()
         self.m.load()
