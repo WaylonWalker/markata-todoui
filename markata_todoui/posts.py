@@ -10,6 +10,8 @@ from rich.panel import Panel
 from rich.table import Table
 from textual.widget import Widget
 
+DEFAULT_EDITOR = "vi {file}"
+
 
 class DummyPost(frontmatter.Post):
     uuid = ""
@@ -41,22 +43,21 @@ class Posts(Widget):
     def __init__(self, markata: "Markata", title: str, filter: str):
         super().__init__(title)
         self.m = markata
-        self.config = self.m.get_plugin_config(__file__) or {}
+        self.config = self.m.get_plugin_config("todoui") or {}
 
         self.title = title
         self.name = title
         self.filter = filter
         self.is_selected = True
         self.current_post = DummyPost("")
-        self.messages = ""
         self.update()
         self.next_post()
 
-    def update(self, reload=False) -> None:
+    def update(self, reload: bool = False) -> None:
         current_uuid = self.current_post.get("uuid", None)
-        # if reload:
-        #     self.m.glob()
-        #     self.m.load()
+        if reload:
+            self.m.glob()
+            self.m.load()
 
         self.post_list = sorted(
             self.m.filter(self.filter), key=lambda x: x["priority"], reverse=True
@@ -64,12 +65,17 @@ class Posts(Widget):
         self.post_cycle = itertools.cycle(self.post_list)
         if current_uuid is not None:
             self.select_post_by_id(current_uuid)
-        self.messages = self.messages + f"{self.current_post.get('uuid')}\n"
         self.refresh()
 
     def text(self) -> Optional[str]:
-        return self.messages
-        # return self.current_post.get("uuid", "") + self.current_post.content
+        return (
+            str(hex(id(self.m)))
+            + "\n"
+            + str(hex(id(self.current_post)))
+            + "\n"
+            + self.current_post.get("uuid", "")
+            + self.current_post.content
+        )
 
     def render(self) -> Panel:
         grid = Table.grid(expand=True)
@@ -120,19 +126,16 @@ class Posts(Widget):
         # return self.current_post
 
     def select_post_by_id(self, uuid: str) -> frontmatter.Post:
-        first_uuid = self.current_post["uuid"]
-        self.messages = "getting post by id\n"
-        self.messages = self.messages + f"first_uuid: {first_uuid}\n"
-        self.messages = self.messages + f"looking for uuid: {uuid}\n"
         while uuid != self.current_post["uuid"]:
-
             self.current_post = next(self.post_cycle)
-            self.messages = self.messages + f'this uuid: {self.current_post["uuid"]}\n'
-            if self.current_post["uuid"] == first_uuid:
-                raise RecursionError(f"could not find post uuid: {uuid}")
+
+    def select_post_by_index(self, index) -> frontmatter.Post:
+        uuid = self.post_list[index].get("uuid")
+        while uuid != self.current_post["uuid"]:
+            self.current_post = next(self.post_cycle)
+        self.refresh()
 
     def move_next(self) -> None:
-
         post = deepcopy(self.current_post)
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
@@ -159,8 +162,10 @@ class Posts(Widget):
     def open_post(self) -> None:
 
         post = self.current_post
+        editor = self.config.get("editor", DEFAULT_EDITOR)
+        cmd = eval("f'" + editor + "'", {"file": post.get("path")})
         proc = subprocess.Popen(
-            f'nvr --remote "{post["path"]}"',
+            cmd,
             shell=True,
         )
         proc.wait()

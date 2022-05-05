@@ -36,6 +36,8 @@ DEFAULT_KEYS = {
     "n": "new_post",
     "ctrl+@": "show_config",
     "c": "show_config",
+    "g": "first_post",
+    "G": "last_post",
 }
 
 GLOBAL_FILTER = "True"
@@ -70,6 +72,7 @@ class MarkataApp(App):
     async def on_load(self, event):
         self.m = Markata()
         self.config = self.m.get_plugin_config("todoui")
+        self.config["global_filter"] = GLOBAL_FILTER
 
         user_defined_keys = self.config.get("keys", {})
         self.config["keys"] = {**user_defined_keys, **DEFAULT_KEYS}
@@ -78,7 +81,7 @@ class MarkataApp(App):
             await self.bind(key, command)
 
     async def action_show_config(self) -> None:
-        self.preview.text = "config\n" + str(self.config)
+        self.preview.text = "config\n" + str(self.config) + self.current_stack.text()
         self.preview.refresh()
 
     async def action_refresh(self, reload=True) -> None:
@@ -91,36 +94,30 @@ class MarkataApp(App):
 
     async def action_next_post(self) -> None:
         self.current_stack.next_post()
-        # await self.action_refresh(reload=False)
-        # self.current_stack.update()
-        # self.current_stack.refresh()
-        # self.preview.text = self.current_stack.text() or ""
-        # self.preview.refresh()
+        self.preview.text = self.current_stack.text() or "next_post"
+        self.refresh()
 
     async def action_move_next(self) -> None:
         current_post_uuid = self.current_stack.current_post.get("uuid", "")
         self.current_stack.move_next()
         self.m.glob()
         self.m.load()
-        self.current_stack.select_post_by_id(current_post_uuid)
         await self.action_next_stack()
+        self.current_stack.select_post_by_id(current_post_uuid)
 
     async def action_move_previous(self) -> None:
         current_post_uuid = self.current_stack.current_post.get("uuid", "")
         self.current_stack.move_previous()
         self.m.glob()
         self.m.load()
-        self.current_stack.select_post_by_id(current_post_uuid)
         await self.action_prev_stack()
+        self.current_stack.select_post_by_id(current_post_uuid)
 
     async def action_raise_priority(self) -> None:
         self.current_stack.raise_priority()
         self.m.glob()
         self.m.load()
         self.current_stack.update()
-        # self.current_stack.refresh()
-        # self.preview.text = self.current_stack.text() or ""
-        # self.preview.refresh()
 
     async def action_lower_priority(self) -> None:
         self.current_stack.lower_priority()
@@ -128,40 +125,30 @@ class MarkataApp(App):
         self.m.load()
         self.current_stack.update()
 
-        # self.current_stack.next_post()
-        # self.current_stack.refresh()
-        # self.preview.text = self.current_stack.text() or ""
-        # self.preview.refresh()
-
     async def action_prev_post(self) -> None:
         self.current_stack.previous_post()
-        # self.current_stack.update()
-        # self.preview.text = self.current_stack.text() or ""
-        # self.preview.refresh()
 
     async def action_next_stack(self) -> None:
         self.current_stack.is_selected = False
-        # self.current_stack.update()
         self.current_stack = next(self.stacks)
         self.current_stack.is_selected = True
-        # self.current_stack.update()
-        # self.preview.text = self.current_stack.text() or ""
-        # self.preview.refresh()
         await self.action_refresh(reload=False)
 
     async def action_prev_stack(self) -> None:
         self.current_stack.is_selected = False
-        # self.current_stack.update()
         self.current_stack = next(self.stacks)
         self.current_stack = next(self.stacks)
         self.current_stack.is_selected = True
-        # self.current_stack.update()
-        # self.preview.text = self.current_stack.text() or ""
-        # self.preview.refresh()
         await self.action_refresh(reload=False)
 
     async def action_open_post(self) -> None:
         self.current_stack.open_post()
+
+    async def action_first_post(self) -> None:
+        self.current_stack.select_post_by_index(0)
+
+    async def action_last_post(self) -> None:
+        self.current_stack.select_post_by_index(-1)
 
     async def action_new_post(self) -> None:
         pop_dir = Path(__file__).parents[1]
@@ -175,7 +162,7 @@ class MarkataApp(App):
 
 
 @hook_impl()
-def load(markata):
+def load(markata: Markata) -> None:
     for article in markata.articles:
 
         if "uuid" not in article.keys():
@@ -190,9 +177,9 @@ def load(markata):
 
 
 @hook_impl()
-def cli(app, markata):
+def cli(app, markata: Markata) -> None:
     @app.command()
-    def todoui(global_filter="True"):
+    def todoui(global_filter="True") -> None:
         global GLOBAL_FILTER
         GLOBAL_FILTER = global_filter
         MarkataApp.run(log="textual.log")
