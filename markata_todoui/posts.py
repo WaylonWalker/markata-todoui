@@ -18,7 +18,9 @@ class DummyPost(frontmatter.Post):
 
 
 def keys_on_file(post: frontmatter.Post) -> Dict[str, str]:
-    return {key: post[key] for key in frontmatter.load(post.get("path")).keys()}
+    return {
+        key: value for key, value in frontmatter.load(post.get("path")).metadata.items()
+    }
 
 
 class Status(Enum):
@@ -48,7 +50,7 @@ class Posts(Widget):
         self.title = title
         self.name = title
         self.filter = filter
-        self.is_selejted = True
+        self.is_selected = True
         self.current_post = DummyPost("")
         self.update()
         self.next_post()
@@ -95,7 +97,7 @@ class Posts(Widget):
             self.border_style = "#c122ac"
         return Panel(
             grid,
-            title=f"[#e1af66]{self.title} ({len(self.m.filter(self.filter))})",
+            title=f"[#e1af66]{self.title} ({len(self.post_list)})",
             border_style=self.border_style,
         )
 
@@ -119,7 +121,7 @@ class Posts(Widget):
         # return self.current_post
 
     def select_post_by_id(self, uuid: str) -> frontmatter.Post:
-        while uuid != self.current_post["uuid"]:
+        while uuid != self.current_post.get("uuid", ""):
             self.current_post = next(self.post_cycle)
 
     def select_post_by_index(self, index) -> frontmatter.Post:
@@ -142,7 +144,7 @@ class Posts(Widget):
         post.metadata = keys_on_file(post)
         post["priority"] = post["priority"] + 1
         path.write_text(frontmatter.dumps(post))
-        self.update()
+        self.update(reload=True)
 
     def lower_priority(self) -> None:
         post = deepcopy(self.current_post)
@@ -150,7 +152,7 @@ class Posts(Widget):
         post.metadata = keys_on_file(post)
         post["priority"] = post["priority"] - 1
         path.write_text(frontmatter.dumps(post))
-        self.update()
+        self.update(reload=True)
 
     def open_post(self) -> None:
 
