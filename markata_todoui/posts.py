@@ -48,7 +48,7 @@ class Posts(Widget):
         self.title = title
         self.name = title
         self.filter = filter
-        self.is_selected = True
+        self.is_selejted = True
         self.current_post = DummyPost("")
         self.update()
         self.next_post()
@@ -68,14 +68,7 @@ class Posts(Widget):
         self.refresh()
 
     def text(self) -> Optional[str]:
-        return (
-            str(hex(id(self.m)))
-            + "\n"
-            + str(hex(id(self.current_post)))
-            + "\n"
-            + self.current_post.get("uuid", "")
-            + self.current_post.content
-        )
+        return self.current_post.content
 
     def render(self) -> Panel:
         grid = Table.grid(expand=True)
@@ -178,3 +171,10 @@ class Posts(Widget):
         post["status"] = Status(Status._member_map_[post["status"]]).previous().name
         path.write_text(frontmatter.dumps(post))
         self.update()
+
+    def delete_current(self) -> None:
+        Path(self.current_post["path"]).unlink()
+        self.next_post()
+        uuid = self.current_post.get("uuid")
+        self.update(reload=True)
+        self.select_post_by_id(uuid)

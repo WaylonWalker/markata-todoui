@@ -38,6 +38,8 @@ DEFAULT_KEYS = {
     "c": "show_config",
     "g": "first_post",
     "G": "last_post",
+    "D": "delete_post",
+    "r": "refresh",
 }
 
 GLOBAL_FILTER = "True"
@@ -84,18 +86,30 @@ class MarkataApp(App):
         self.preview.text = "config\n" + str(self.config) + self.current_stack.text()
         self.preview.refresh()
 
-    async def action_refresh(self, reload=True) -> None:
-        self.todos.update()
-        self.doing.update()
-        self.done.update()
+    async def action_refresh(self, update=True, reload=True) -> None:
+        if reload:
+            self.m.glob()
+            self.m.load()
+            self.todos.update(reload=False)
+            self.doing.update(reload=False)
+            self.done.update(reload=False)
+
+        # if update and not reload:
+        #     self.todos.update(reload=False)
+        #     self.doing.update(reload=False)
+        #     self.done.update(reload=False)
+
+        # if reload:
+        #     self.todos.update(reload=True)
+        #     self.doing.update(reload=True)
+        #     self.done.update(reload=True)
         self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
         self.refresh()
 
     async def action_next_post(self) -> None:
         self.current_stack.next_post()
-        self.preview.text = self.current_stack.text() or "next_post"
-        self.refresh()
+        await self.action_refresh(reload=False)
 
     async def action_move_next(self) -> None:
         current_post_uuid = self.current_stack.current_post.get("uuid", "")
@@ -127,19 +141,20 @@ class MarkataApp(App):
 
     async def action_prev_post(self) -> None:
         self.current_stack.previous_post()
+        await self.action_refresh(reload=False)
 
     async def action_next_stack(self) -> None:
         self.current_stack.is_selected = False
         self.current_stack = next(self.stacks)
         self.current_stack.is_selected = True
-        await self.action_refresh(reload=False)
+        await self.action_refresh(reload=True)
 
     async def action_prev_stack(self) -> None:
         self.current_stack.is_selected = False
         self.current_stack = next(self.stacks)
         self.current_stack = next(self.stacks)
         self.current_stack.is_selected = True
-        await self.action_refresh(reload=False)
+        await self.action_refresh(reload=True)
 
     async def action_open_post(self) -> None:
         self.current_stack.open_post()
@@ -151,14 +166,18 @@ class MarkataApp(App):
         self.current_stack.select_post_by_index(-1)
 
     async def action_new_post(self) -> None:
-        pop_dir = Path(__file__).parents[1]
-        template = "plugins/todo-template"
+        pop_dir = "~/work/todo"
+        template = "~/.copier-templates/todo"
 
         proc = subprocess.Popen(
-            f'tmux popup -d "{pop_dir}" copier copy {template} tasks',
+            f'tmux popup -d "{pop_dir}" copier copy {template} {pop_dir}',
             shell=True,
         )
         proc.wait()
+
+    async def action_delete_post(self) -> None:
+        self.current_stack.delete_current()
+        # await self.action_refresh(reload=False)
 
 
 @hook_impl()
