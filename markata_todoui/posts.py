@@ -164,6 +164,7 @@ class Posts(Widget):
             shell=True,
         )
         proc.wait()
+        self.update(reload=True)
 
     def move_previous(self) -> None:
 
