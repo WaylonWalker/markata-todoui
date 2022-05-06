@@ -14,7 +14,7 @@ DEFAULT_EDITOR = "vi {file}"
 
 
 class DummyPost(frontmatter.Post):
-    uuid = ""
+    uuid = "dummypost"
 
 
 def keys_on_file(post: frontmatter.Post) -> Dict[str, str]:
@@ -65,9 +65,15 @@ class Posts(Widget):
             self.m.filter(self.filter), key=lambda x: x["priority"], reverse=True
         )
         self.post_cycle = itertools.cycle(self.post_list)
-        if current_uuid is not None:
+        if not self.post_list:
+            self.current_post = DummyPost("")
+        elif current_uuid is not None:
             self.select_post_by_id(current_uuid)
         self.refresh()
+
+    @property
+    def is_dummy(self) -> bool:
+        return self.current_post.get("uuid") == "dummypost"
 
     def text(self) -> Optional[str]:
         return self.current_post.content
@@ -131,6 +137,8 @@ class Posts(Widget):
         self.refresh()
 
     def move_next(self) -> None:
+        if self.is_dummy:
+            return
         post = deepcopy(self.current_post)
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
@@ -139,6 +147,8 @@ class Posts(Widget):
         self.update()
 
     def raise_priority(self) -> None:
+        if self.is_dummy:
+            return
         post = deepcopy(self.current_post)
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
@@ -147,6 +157,8 @@ class Posts(Widget):
         self.update(reload=True)
 
     def lower_priority(self) -> None:
+        if self.is_dummy:
+            return
         post = deepcopy(self.current_post)
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
@@ -155,7 +167,8 @@ class Posts(Widget):
         self.update(reload=True)
 
     def open_post(self) -> None:
-
+        if self.is_dummy:
+            return
         post = self.current_post
         editor = self.config.get("editor", DEFAULT_EDITOR)
         cmd = eval("f'" + editor + "'", {"file": post.get("path")})
@@ -167,7 +180,8 @@ class Posts(Widget):
         self.update(reload=True)
 
     def move_previous(self) -> None:
-
+        if self.is_dummy:
+            return
         post = deepcopy(self.current_post)
         path = Path(post["path"])
         post.metadata = keys_on_file(post)
@@ -176,8 +190,10 @@ class Posts(Widget):
         self.update()
 
     def delete_current(self) -> None:
+        if self.is_dummy:
+            return
         Path(self.current_post["path"]).unlink()
+        self.update(reload=True)
         self.next_post()
         uuid = self.current_post.get("uuid")
-        self.update(reload=True)
         self.select_post_by_id(uuid)

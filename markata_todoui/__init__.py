@@ -166,14 +166,14 @@ class MarkataApp(App):
         self.current_stack.select_post_by_index(-1)
 
     async def action_new_post(self) -> None:
-        pop_dir = "~/work/todo"
-        template = "~/.copier-templates/todo"
+        cmd = self.config.get("new_post")
 
         proc = subprocess.Popen(
-            f'tmux popup -d "{pop_dir}" copier copy {template} {pop_dir}',
+            cmd,
             shell=True,
         )
         proc.wait()
+        await self.action_refresh(reload=True)
 
     async def action_delete_post(self) -> None:
         self.current_stack.delete_current()
