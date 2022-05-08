@@ -54,6 +54,7 @@ class Preview(Widget):
         return Panel(Markdown(self.text))
 
 
+
 class MarkataApp(App):
     async def on_mount(self) -> None:
         self.m.console.quiet = True
@@ -80,6 +81,7 @@ class MarkataApp(App):
         self.config["keys"] = {**user_defined_keys, **DEFAULT_KEYS}
 
         for key, command in self.config.get("keys", None).items():
+
             await self.bind(key, command)
 
     async def action_show_config(self) -> None:
