@@ -54,7 +54,6 @@ class Preview(Widget):
         return Panel(Markdown(self.text))
 
 
-
 class MarkataApp(App):
     async def on_mount(self) -> None:
         self.m.console.quiet = True
@@ -70,7 +69,6 @@ class MarkataApp(App):
         await self.view.dock(
             self.preview, self.todos, self.doing, self.done, edge="left", name="todos"
         )
-        # self.set_interval(1, self.action_refresh)
 
     async def on_load(self, event):
         self.m = Markata()
@@ -96,15 +94,6 @@ class MarkataApp(App):
             self.doing.update(reload=False)
             self.done.update(reload=False)
 
-        # if update and not reload:
-        #     self.todos.update(reload=False)
-        #     self.doing.update(reload=False)
-        #     self.done.update(reload=False)
-
-        # if reload:
-        #     self.todos.update(reload=True)
-        #     self.doing.update(reload=True)
-        #     self.done.update(reload=True)
         self.preview.text = self.current_stack.text() or ""
         self.preview.refresh()
         self.refresh()
@@ -179,7 +168,6 @@ class MarkataApp(App):
 
     async def action_delete_post(self) -> None:
         self.current_stack.delete_current()
-        # await self.action_refresh(reload=False)
 
 
 @hook_impl()

@@ -122,9 +122,6 @@ class Posts(Widget):
         except StopIteration:
             ...
         self.refresh()
-        # else:
-        #     self.current_post.content = "No More Posts"
-        # return self.current_post
 
     def select_post_by_id(self, uuid: str) -> frontmatter.Post:
         while uuid != self.current_post.get("uuid", ""):
