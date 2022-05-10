@@ -59,10 +59,11 @@ title="doing list"
 filter="status=='doing'"
 card_template="<li class='post'><a href='/{{ slug }}/'>{{ slug }}</a></li>"
  
-[markata.feeds.done]
-title="doing list"
-filter="status=='done'"
-card_template="<li class='post'><a href='/{{ slug }}/'>{{ slug }}</a></li>"
+[markata.todoui]
+# set editor to open file in nvim inside a new terminal
+editor='kitty nvim {file}'
+# set new post to call copier template in a tmux popup
+new_post='tmux popup -d "~/git/markata-todoui-sample" copier copy ~/.copier-templates/todo ~/git/markata-todoui-sample/'
 
 [markata.todoui.keys]
 q="quit"
@@ -79,3 +80,7 @@ enter="open_post"
 n="new_post"
 "ctrl+@"="show_config"
 c="show_config"
+g="first_post"
+G="last_post"
+D="delete_post"
+
