@@ -107,12 +107,12 @@ class Posts(Widget):
                     f"[{self.colors['color_default_task_date']}]{post.get('date')}[/]",
                 )
         if self.is_selected:
-            self.border_style = "#e8bde3"
+            self.border_style = f"{self.colors['color_focused_border']}"
         else:
-            self.border_style = "#c122ac"
+            self.border_style = f"{self.colors['color_default_border']}"
         return Panel(
             grid,
-            title=f"[#e1af66]{self.title} ({len(self.post_list)})",
+            title=f"[{self.colors['color_title']}]{self.title} ({len(self.post_list)})",
             border_style=self.border_style,
         )
 
