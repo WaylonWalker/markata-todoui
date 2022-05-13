@@ -30,7 +30,7 @@ with open("requirements_dev.txt", "r", encoding="utf-8") as f:
 
 setup(
     name=NAME,
-    version="0.0.3",
+    version="0.0.4",
     description="A todo plugin for markta",
     long_description=README,
     long_description_content_type="text/markdown",
