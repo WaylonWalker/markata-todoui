@@ -67,15 +67,14 @@ new_post='tmux popup -d "~/git/markata-todoui-sample" copier copy ~/.copier-temp
 
 [markata.todoui.colors]
 
-color_focused_task= "#83DCC8" # hex values are allowed
-color_focused_task_priority= "purple" # color keys interpreted by rich are also allowed
-color_focused_task_date= "purple"
-color_default_task= "blue"
+color_focused_task= "red"
+color_focused_task_priority= "bright_black" # color keys interpreted by rich are also allowed
+color_focused_task_date= "bright_black"
+color_default_task= "purple"
 color_default_task_priority= "bright_black"
 color_default_task_date= "bright_black"
-color_focused_border= "#c792ea"
-color_default_border= "#484e5a"
-color_title= "white"
+color_focused_border= "#e8bde3"  # hex values are allowed
+color_default_border= "#c122ac"
 
 [markata.todoui.keys]
 q="quit"
