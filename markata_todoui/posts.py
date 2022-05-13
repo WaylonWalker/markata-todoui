@@ -87,7 +87,7 @@ class Posts(Widget):
                 and self.is_selected
             ):
                 grid.add_row(
-                    f"[red]{post.get('title')}",
+                    f"[{self.config.get('color_focused_task', 'red')}]{post.get('title')}",
                     f"[bright_black]({post.get('priority')})[/]",
                     f"[bright_black]{post.get('date')}[/]",
                 )
