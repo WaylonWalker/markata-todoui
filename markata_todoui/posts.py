@@ -18,6 +18,8 @@ DEFAULT_COLORS = {
     "color_default_task": "purple",
     "color_default_task_priority": "bright_black",
     "color_default_task_date": "bright_black",
+    "color_focused_border": "#e8bde3",
+    "color_default_border": "#c122ac",
 }
 
 
