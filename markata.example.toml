@@ -75,6 +75,7 @@ color_default_task_priority= "bright_black"
 color_default_task_date= "bright_black"
 color_focused_border= "#e8bde3"  # hex values are also allowed
 color_default_border= "#c122ac"
+color_title="#e1af66"
 
 [markata.todoui.keys]
 q="quit"
