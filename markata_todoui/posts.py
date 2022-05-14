@@ -20,6 +20,7 @@ DEFAULT_COLORS = {
     "color_default_task_date": "bright_black",
     "color_focused_border": "#e8bde3",
     "color_default_border": "#c122ac",
+    "color_title": "#e1af66",
 }
 
 
