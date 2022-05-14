@@ -11,6 +11,17 @@ from rich.table import Table
 from textual.widget import Widget
 
 DEFAULT_EDITOR = "vi {file}"
+DEFAULT_COLORS = {
+    "color_focused_task": "red",
+    "color_focused_task_priority": "bright_black",
+    "color_focused_task_date": "bright_black",
+    "color_default_task": "purple",
+    "color_default_task_priority": "bright_black",
+    "color_default_task_date": "bright_black",
+    "color_focused_border": "#e8bde3",
+    "color_default_border": "#c122ac",
+    "color_title": "#e1af66",
+}
 
 
 class DummyPost(frontmatter.Post):
@@ -46,6 +57,7 @@ class Posts(Widget):
         super().__init__(title)
         self.m = markata
         self.config = self.m.get_plugin_config("todoui") or {}
+        self.colors = self.config.get("colors", DEFAULT_COLORS)
 
         self.title = title
         self.name = title
@@ -87,23 +99,23 @@ class Posts(Widget):
                 and self.is_selected
             ):
                 grid.add_row(
-                    f"[red]{post.get('title')}",
-                    f"[bright_black]({post.get('priority')})[/]",
-                    f"[bright_black]{post.get('date')}[/]",
+                    f"[{self.colors['color_focused_task']}]{post.get('title')}",
+                    f"[{self.colors['color_focused_task_priority']}]({post.get('priority')})[/]",
+                    f"[{self.colors['color_focused_task_date']}]{post.get('date')}[/]",
                 )
             else:
                 grid.add_row(
-                    f"[purple]{post.get('title')}",
-                    f"[bright_black]({post.get('priority')})[/]",
-                    f"[bright_black]{post.get('date')}[/]",
+                    f"[{self.colors['color_default_task']}]{post.get('title')}",
+                    f"[{self.colors['color_default_task_priority']}]({post.get('priority')})[/]",
+                    f"[{self.colors['color_default_task_date']}]{post.get('date')}[/]",
                 )
         if self.is_selected:
-            self.border_style = "#e8bde3"
+            self.border_style = f"{self.colors['color_focused_border']}"
         else:
-            self.border_style = "#c122ac"
+            self.border_style = f"{self.colors['color_default_border']}"
         return Panel(
             grid,
-            title=f"[#e1af66]{self.title} ({len(self.post_list)})",
+            title=f"[{self.colors['color_title']}]{self.title} ({len(self.post_list)})",
             border_style=self.border_style,
         )
 

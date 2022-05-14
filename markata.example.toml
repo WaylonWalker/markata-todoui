@@ -65,6 +65,18 @@ editor='kitty nvim {file}'
 # set new post to call copier template in a tmux popup
 new_post='tmux popup -d "~/git/markata-todoui-sample" copier copy ~/.copier-templates/todo ~/git/markata-todoui-sample/'
 
+[markata.todoui.colors]
+
+color_focused_task= "red"
+color_focused_task_priority= "bright_black" # color nterpreted by rich 
+color_focused_task_date= "bright_black"
+color_default_task= "purple"
+color_default_task_priority= "bright_black"
+color_default_task_date= "bright_black"
+color_focused_border= "#e8bde3"  # hex values are also allowed
+color_default_border= "#c122ac"
+color_title="#e1af66"
+
 [markata.todoui.keys]
 q="quit"
 l="next_stack"
