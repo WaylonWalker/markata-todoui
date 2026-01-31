@@ -3,3 +3,4 @@ markata
 markupsafe==2.0.1
 rich
 textual
+copier>=9.11.2 # not directly required, pinned by Snyk to avoid a vulnerability
